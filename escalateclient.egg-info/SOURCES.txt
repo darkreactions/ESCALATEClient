@@ -1,0 +1,7 @@
+setup.py
+escalateclient/__init__.py
+escalateclient/escalateclient.py
+escalateclient.egg-info/PKG-INFO
+escalateclient.egg-info/SOURCES.txt
+escalateclient.egg-info/dependency_links.txt
+escalateclient.egg-info/top_level.txt

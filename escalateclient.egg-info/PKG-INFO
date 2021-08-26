@@ -1,0 +1,12 @@
+Metadata-Version: 1.1
+Name: escalateclient
+Version: 0.0.1
+Summary: A REST API Client library for ESCALATE
+Home-page: UNKNOWN
+Author: Michael Frederick Tynes
+Author-email: mtynes@lanl.gov
+License: UNKNOWN
+Description: UNKNOWN
+Platform: UNKNOWN
+Classifier: Programming Language :: Python :: 3
+Classifier: Operating System :: OS Independent
