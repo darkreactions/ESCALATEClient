@@ -54,6 +54,66 @@ class ESCALATEClient():
                 return r.json()['results']
         print('Returning response object')   
         return r
+    
+    def search(self, 
+        endpoint='', 
+        search_field='',
+        criteria= '',
+        data=None,
+        exact=False,
+        parse_json=True, 
+        content_type='application/json'):
+
+        if exact==True:
+            if data == None:
+                r = requests.get(f'{self.base_url}/api/{endpoint}/?{search_field}={criteria}', 
+                             headers={**self._token_header, 
+                                      'content-type': content_type})   
+            else:
+                i=0
+                string=''
+                while i<len(data)-1:
+                    string+=data[i]+','
+                    i+=1
+                string+=data[i]
+                r = requests.get(f'{self.base_url}/api/{endpoint}/?{search_field}={criteria}&fields={string}', 
+                                 headers={**self._token_header, 
+                                          'content-type': content_type})
+        else:
+            if data == None:
+                r = requests.get(f'{self.base_url}/api/{endpoint}/?{search_field}__icontains={criteria}', 
+                             headers={**self._token_header, 
+                                      'content-type': content_type})   
+            else:
+                i=0
+                string=''
+                while i<len(data)-1:
+                    string+=data[i]+','
+                    i+=1
+                string+=data[i]
+                r = requests.get(f'{self.base_url}/api/{endpoint}/?{search_field}__icontains={criteria}&fields={string}', 
+                                 headers={**self._token_header, 
+                                          'content-type': content_type})
+
+        if r.ok: 
+            print('GET: OK')
+        else: 
+            print('GET: FAILED')
+
+        if r.ok and parse_json:
+            resp_json = r.json()        
+            # handle cases: no vs one vs many results
+            count = resp_json.get('count')
+            if count is None or count == 0:
+                return r.json()
+            elif count == 1: 
+                print('Found one resource, returning dict')
+                return resp_json['results'][0]
+            elif count >= 1: 
+                print(f"Found {resp_json['count']} resources, returning list of dicts)")
+                return r.json()['results']
+        print('Returning response object')   
+        return r
         
     def post(self, 
              endpoint, 
