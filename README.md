@@ -17,8 +17,11 @@ escalate=ESCALATEClient(escalate_url,
 
 escalate.list_endpoints()
 
+escalate.search(endpoint, search_field, criteria, data=[], exact=False, negate=False)
+
 escalate.get(endpoint, data={})
 escalate.post(endpoint, data={})
+escalate.patch(resource_url, data={})
 escalate.put(resource_url, data={})
 escalate.delete(resource_url)
 ```
