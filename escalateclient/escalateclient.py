@@ -56,44 +56,151 @@ class ESCALATEClient():
         return r
     
     def search(self, 
-        endpoint='', 
+        endpoint='',
+        related_ep=None, #for cross-searches
         search_field='',
         criteria= '',
-        data=None,
+        data=None, #must be a list
         exact=False,
+        negate=False,
         parse_json=True, 
         content_type='application/json'):
+    
+        if negate==False:
 
-        if exact==True:
-            if data == None:
-                r = requests.get(f'{self.base_url}/api/{endpoint}/?{search_field}={criteria}', 
-                             headers={**self._token_header, 
-                                      'content-type': content_type})   
+            if exact==True:
+                if data == None:
+                    '''Returns all fields for exact match'''
+                    if related_ep == None:
+
+                        r = requests.get(f'{self.base_url}/api/{endpoint}/?{search_field}={criteria}', 
+                                     headers={**self._token_header, 
+                                              'content-type': content_type})
+                    else: #cross-search 
+                        r = requests.get(f'{self.base_url}/api/{endpoint}/?{related_ep}__{search_field}={criteria}', 
+                                     headers={**self._token_header, 
+                                              'content-type': content_type})
+
+                else:
+                    '''Returns requested field(s) for exact match'''
+                    i=0
+                    data_string=''
+                    while i<len(data)-1:
+                        data_string+=data[i]+','
+                        i+=1
+                    data_string+=data[i]
+
+                    if related_ep ==None:
+
+                        r = requests.get(f'{self.base_url}/api/{endpoint}/?{search_field}={criteria}&fields={data_string}', 
+                                         headers={**self._token_header, 
+                                                  'content-type': content_type}) 
+                    else: #cross-search
+
+                        r = requests.get(f'{self.base_url}/api/{endpoint}/?{related_ep}__{search_field}={criteria}&fields={data_string}', 
+                                         headers={**self._token_header, 
+                                                  'content-type': content_type}) 
+
             else:
-                i=0
-                string=''
-                while i<len(data)-1:
-                    string+=data[i]+','
-                    i+=1
-                string+=data[i]
-                r = requests.get(f'{self.base_url}/api/{endpoint}/?{search_field}={criteria}&fields={string}', 
-                                 headers={**self._token_header, 
-                                          'content-type': content_type})
+
+
+                if data == None:
+                    '''Containment test; returns all fields'''
+
+                    if related_ep == None:
+                        r = requests.get(f'{self.base_url}/api/{endpoint}/?{search_field}__icontains={criteria}', 
+                                         headers={**self._token_header, 
+                                                  'content-type': content_type}) 
+                    else: #cross-search
+                        r = requests.get(f'{self.base_url}/api/{endpoint}/?{related_ep}__{search_field}__icontains={criteria}', 
+                                         headers={**self._token_header, 
+                                                  'content-type': content_type})
+
+                else:
+                    '''Containment test; returns requested field(s)'''
+                    i=0
+                    data_string=''
+                    while i<len(data)-1:
+                        data_string+=data[i]+','
+                        i+=1
+                    data_string+=data[i]
+
+                    if related_ep==None:
+                        r = requests.get(f'{self.base_url}/api/{endpoint}/?{search_field}__icontains={criteria}&fields={data_string}', 
+                                         headers={**self._token_header, 
+                                                  'content-type': content_type}) 
+                    else: #cross-search
+                        r = requests.get(f'{self.base_url}/api/{endpoint}/?{related_ep}__{search_field}__icontains={criteria}&fields={data_string}', 
+                                             headers={**self._token_header, 
+                                                      'content-type': content_type})
         else:
-            if data == None:
-                r = requests.get(f'{self.base_url}/api/{endpoint}/?{search_field}__icontains={criteria}', 
-                             headers={**self._token_header, 
-                                      'content-type': content_type})   
+        #negations
+
+            if exact==True:
+                if data == None:
+                    '''Returns all fields for exact match'''
+                    if related_ep == None:
+
+                        r = requests.get(f'{self.base_url}/api/{endpoint}/?{search_field}!={criteria}', 
+                                     headers={**self._token_header, 
+                                              'content-type': content_type})
+                    else: #cross-search 
+                        r = requests.get(f'{self.base_url}/api/{endpoint}/?{related_ep}__{search_field}!={criteria}', 
+                                     headers={**self._token_header, 
+                                              'content-type': content_type})
+
+                else:
+                    '''Returns requested field(s) for exact match'''
+                    i=0
+                    data_string=''
+                    while i<len(data)-1:
+                        data_string+=data[i]+','
+                        i+=1
+                    data_string+=data[i]
+
+                    if related_ep ==None:
+
+                        r = requests.get(f'{self.base_url}/api/{endpoint}/?{search_field}={criteria}&fields!={data_string}', 
+                                         headers={**self._token_header, 
+                                                  'content-type': content_type}) 
+                    else: #cross-search
+
+                        r = requests.get(f'{self.base_url}/api/{endpoint}/?{related_ep}__{search_field}!={criteria}&fields={data_string}', 
+                                         headers={**self._token_header, 
+                                                  'content-type': content_type}) 
+
             else:
-                i=0
-                string=''
-                while i<len(data)-1:
-                    string+=data[i]+','
-                    i+=1
-                string+=data[i]
-                r = requests.get(f'{self.base_url}/api/{endpoint}/?{search_field}__icontains={criteria}&fields={string}', 
-                                 headers={**self._token_header, 
-                                          'content-type': content_type})
+
+
+                if data == None:
+                    '''Containment test; returns all fields'''
+
+                    if related_ep == None:
+                        r = requests.get(f'{self.base_url}/api/{endpoint}/?{search_field}__icontains!={criteria}', 
+                                         headers={**self._token_header, 
+                                                  'content-type': content_type}) 
+                    else: #cross-search
+                        r = requests.get(f'{self.base_url}/api/{endpoint}/?{related_ep}__{search_field}__icontains!={criteria}', 
+                                         headers={**self._token_header, 
+                                                  'content-type': content_type})
+
+                else:
+                    '''Containment test; returns requested field(s)'''
+                    i=0
+                    data_string=''
+                    while i<len(data)-1:
+                        data_string+=data[i]+','
+                        i+=1
+                    data_string+=data[i]
+
+                    if related_ep==None:
+                        r = requests.get(f'{self.base_url}/api/{endpoint}/?{search_field}__icontains!={criteria}&fields={data_string}', 
+                                         headers={**self._token_header, 
+                                                  'content-type': content_type}) 
+                    else: #cross-search
+                        r = requests.get(f'{self.base_url}/api/{endpoint}/?{related_ep}__{search_field}__icontains!={criteria}', 
+                                             headers={**self._token_header, 
+                                                      'content-type': content_type})                       
 
         if r.ok: 
             print('GET: OK')
@@ -139,7 +246,7 @@ class ESCALATEClient():
         return r
     
     def put(self, url=None, endpoint=None, resource_id=None, data=None):
-        """Update a resource
+        """Update a complete resource
         Either provide a url or an endpoint and resource id
         """
         if not ((url is not None) or (endpoint is not None and resource_id is not None)): 
@@ -148,6 +255,18 @@ class ESCALATEClient():
         if url is None: 
             url = f'{self.base_url}/api/{endpoint}/{resource_id}' 
         r = requests.api.put(url, data, headers=self._token_header)
+        return r
+    
+    def patch(self, url=None, endpoint=None, resource_id=None, data=None):
+        """Update parts of a resource
+        Either provide a url or an endpoint and resource id
+        """
+        if not ((url is not None) or (endpoint is not None and resource_id is not None)): 
+            raise ValueError("Must specify either url or endpoint and resource_id")
+            
+        if url is None: 
+            url = f'{self.base_url}/api/{endpoint}/{resource_id}' 
+        r = requests.api.patch(url, data, headers=self._token_header)
         return r
         
     def delete(self, url=None, endpoint=None, resource_id=None):
