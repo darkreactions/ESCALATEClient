@@ -78,8 +78,8 @@ class ESCALATEClient():
         print('POST: FAILED, returning response object')
         return r
     
-    def put(self, url=None, endpoint=None, resource_id=None, data=None):
-        """Update a complete resource
+    def put(self, data, url=None, endpoint=None, resource_id=None):
+        """Update a resource
         Either provide a url or an endpoint and resource id
         """
         if not ((url is not None) or (endpoint is not None and resource_id is not None)): 
@@ -87,10 +87,10 @@ class ESCALATEClient():
             
         if url is None: 
             url = f'{self.base_url}/api/{endpoint}/{resource_id}' 
-        r = requests.api.put(url, data, headers=self._token_header)
+        r = requests.api.put(url, json=data, headers=self._token_header)
         return r
     
-    def patch(self, url=None, endpoint=None, resource_id=None, data=None):
+    def patch(self, data, url=None, endpoint=None, resource_id=None):
         """Update parts of a resource
         Either provide a url or an endpoint and resource id
         """
@@ -99,7 +99,7 @@ class ESCALATEClient():
             
         if url is None: 
             url = f'{self.base_url}/api/{endpoint}/{resource_id}' 
-        r = requests.api.patch(url, data, headers=self._token_header)
+        r = requests.api.patch(url, json=data, headers=self._token_header)
         return r
         
     def delete(self, url=None, endpoint=None, resource_id=None):
