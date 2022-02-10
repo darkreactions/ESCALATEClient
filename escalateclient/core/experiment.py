@@ -15,12 +15,13 @@ class ExperimentAPIMixin:
         """
 
         exp_template_details = self.get(
-            Endpoints.EXPERIMENT_TEMPLATE, data={"description": name}
+            endpoint=Endpoints.EXPERIMENT_TEMPLATE.value, data={
+                "description": name}
         )
 
         if not details:
             return self.get(
-                f'{Endpoints.EXPERIMENT_TEMPLATE}/{exp_template_details[0]["uuid"]}/create'
+                f'{Endpoints.EXPERIMENT_TEMPLATE.value}/{exp_template_details[0]["uuid"]}/create'
             )
         else:
             return exp_template_details
