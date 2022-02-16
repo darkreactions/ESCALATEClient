@@ -8,6 +8,7 @@ class BaseClient:
     def __init__(self, base_url: str, username: str, password: str) -> None:
         self.base_url = base_url
         self._token = None
+        self._selected_lab = None
         self.login(username, password)
 
     def login(self, username: str, password: str) -> None:
