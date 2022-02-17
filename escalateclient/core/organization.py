@@ -32,7 +32,11 @@ class OrganizationAPIMixin:
         Args:
             uuid (str): uuid of the lab
         """
-        endpoint = f"{Endpoints.ORGANIZATION.value}/{uuid}/view"
+        endpoint = f"{Endpoints.ORGANIZATION.value}/{uuid}"
         lab = self.get(endpoint=endpoint)
-        print(lab)
-        self._selected_lab = lab
+        # return true or false whether selecting lab was successful
+        if "uuid" in lab:
+            self._selected_lab = lab
+            return True 
+        else:
+            return False
