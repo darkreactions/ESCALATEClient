@@ -128,8 +128,12 @@ def test_get_lab_search_negate(client):
 	assert True
 
 def test_select_lab(client):
-	lbl_uuid = "8fe2707d-4f9c-4eb2-8ee7-90d0034fc11f"
-	assert client.select_lab(uuid=lbl_uuid)
+	search = {
+		"short_name": "LBL"
+	}
+	lbl = client.get_lab(search=search)
+	uuid = lbl[0]["uuid"]
+	assert client.select_lab(uuid=uuid)
 
 def test_select_lab_bad_lab(client):
 	uuid = "some-uuid-that-is-wrong"
