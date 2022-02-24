@@ -23,13 +23,16 @@ class BaseClient:
             data={"username": self.username, "password": self.password},
         )
 
-        if "token" in r_login.json():
-            self._token = r_login.json()["token"]
-            self._token_header = {"Authorization": f"Token {self._token}"}
-            self._is_logged_in = True
+        if r_login.ok:
+            if "token" in r_login.json():
+                self._token = r_login.json()["token"]
+                self._token_header = {"Authorization": f"Token {self._token}"}
+                self._is_logged_in = True
+            else:
+                self._is_logged_in = False
+                raise LoginError(r_login)
         else:
-            self._is_logged_in = False
-            raise LoginError(r_login)
+            print(f"Error logging in: {r_login.text}")
 
     def _remove_urls_and_dictionaries(self, data: dict):
         """Removes any urls or nested dictionaries in the dictionary because it is being passed as url
