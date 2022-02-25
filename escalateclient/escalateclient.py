@@ -7,6 +7,7 @@ from .core.organization import OrganizationAPIMixin
 
 class ESCALATEClient(ExperimentAPIMixin, 
                      ChemistryAPIMixin,
+                     OrganizationAPIMixin,
                      BaseClient):
 
     """ESCALATE API Client"""
