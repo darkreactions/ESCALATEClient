@@ -1,12 +1,16 @@
 from __future__ import annotations
 import json
 import requests
+from urllib.parse import urlparse
 from .exceptions import LoginError
+from pathlib import Path
+import uuid
 
 
 class BaseClient:
     def __init__(self, base_url: str, username: str, password: str) -> None:
         self.base_url = base_url
+        self.parsed_url = urlparse(self.base_url)
         self._token = None
         self._selected_lab = None
         self.login(username, password)
@@ -19,18 +23,65 @@ class BaseClient:
             data={"username": self.username, "password": self.password},
         )
 
-        if "token" in r_login.json():
-            self._token = r_login.json()["token"]
-            self._token_header = {"Authorization": f"Token {self._token}"}
-            self._is_logged_in = True
+        if r_login.ok:
+            if "token" in r_login.json():
+                self._token = r_login.json()["token"]
+                self._token_header = {"Authorization": f"Token {self._token}"}
+                self._is_logged_in = True
+            else:
+                self._is_logged_in = False
+                raise LoginError(r_login)
         else:
-            self._is_logged_in = False
-            raise LoginError(r_login)
+            print(f"Error logging in: {r_login.text}")
+
+    def _remove_urls_and_dictionaries(self, data: dict):
+        """Removes any urls or nested dictionaries in the dictionary because it is being passed as url
+        params. If url belongs to escalate replace with the UUID otherwise remove it altogether
+
+        Args:
+            data (dict): Dictionary of search data
+        """
+        processed_data = {}
+        for k, v in data.items():
+            if not v:
+                continue
+            try:
+                result = urlparse(v)
+                if not result.netloc:
+                    # print(f"Value of v: {v}")
+                    processed_data[k] = v
+                elif (
+                    result.netloc == self.parsed_url.netloc
+                ):  # Checks if its the same location as Escalate
+                    uuid_string = Path(result.path).stem  # Gets uuid string
+                    uuid.UUID(uuid_string)  # Verifies if its uuid
+                    processed_data[
+                        k
+                    ] = uuid_string  # If url and uuid is verified, replace the key
+                else:
+                    continue
+
+            except Exception as e:
+                if not isinstance(v, dict):
+                    processed_data[k] = v
+        return processed_data
+
+    def _construct_url(
+        self, endpoint: str = "", resource_id: str = "", related_endpoint: str = ""
+    ):
+        url = f"{self.base_url}/api/{endpoint}"
+        if resource_id:
+            url = f"{url}/{resource_id}"
+            if related_endpoint:
+                url = f"{url}/{related_endpoint}"
+        return url
 
     def get(
         self,
         endpoint: str = "",
         data: dict = {},
+        resource_id: str = "",
+        related_endpoint: str = "",
         parse_json: bool = True,
         content_type: str = "application/json",
     ) -> dict | requests.Response | None:
@@ -38,12 +89,16 @@ class BaseClient:
 
         return: (dict|list|requests.Response), bool
         """
+        data = self._remove_urls_and_dictionaries(data)
+        print(data)
+        url = self._construct_url(endpoint, resource_id, related_endpoint)
         r = requests.get(
-            f"{self.base_url}/api/{endpoint}",
+            url,
             params=data,
             headers={**self._token_header, "content-type": content_type},
         )
         if r.ok:
+            print(r.url)
             resp_json = r.json()
             if "count" in resp_json:
                 print(f'GET: OK. Found {resp_json["count"]} results')
@@ -60,16 +115,25 @@ class BaseClient:
 
         return r
 
-    def post(self, endpoint: str, data: dict, content_type: str = "application/json"):
+    def post(
+        self,
+        endpoint: str,
+        data: dict,
+        resource_id: str = "",
+        related_endpoint: str = "",
+        content_type: str = "application/json",
+    ):
         """POST `data` to `endpoint`in ESCALATE API using `content_type`
         return: (dict|requests.Response), bool
         """
 
         if not self._is_logged_in:
             raise ValueError("Not logged in: cannot post")
-
+        url = self._construct_url(endpoint, resource_id, related_endpoint)
         r = requests.api.post(
-            f"{self.base_url}/api/{endpoint}",
+            # f"{self.base_url}/api/{endpoint}/",
+            # For post adding a trailing /
+            url + "/",
             data=json.dumps(data),
             headers={**self._token_header, "content-type": content_type},
         )
@@ -115,8 +179,8 @@ class BaseClient:
         resource_id: str = None,
         data: dict = None,
     ):
-        url = self._generate_url(url, endpoint, resource_id)
-        r = requests.api.patch(url, json=data, headers=self._token_header)
+        url = self._construct_url(endpoint=endpoint, resource_id=resource_id)
+        r = requests.api.patch(url + "/", json=data, headers=self._token_header)
         print(f"Status {r.status_code}: {r.reason}")
         if not r.ok:
             print(f"{r.text}")
@@ -132,6 +196,31 @@ class BaseClient:
         if not r.ok:
             print(f"{r.text}")
         return r.json()
+
+    def get_or_create(
+        self,
+        endpoint: str = None,
+        resource_id: str = "",
+        related_endpoint: str = "",
+        data: dict = {},
+    ):
+        """Get resource matching data, else create a new one"""
+        r = self.get(
+            endpoint=endpoint,
+            resource_id=resource_id,
+            related_endpoint=related_endpoint,
+            data=data,
+        )
+        if not len(r) > 0:
+            r = [
+                self.post(
+                    endpoint=endpoint,
+                    resource_id=resource_id,
+                    related_endpoint=related_endpoint,
+                    data=data,
+                )
+            ]
+        return r
 
     def list_endpoints(self):
         return self.get()

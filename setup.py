@@ -7,10 +7,9 @@ setuptools.setup(
     author="Michael Frederick Tynes",
     author_email="mtynes@lanl.gov",
     description="A REST API Client library for ESCALATE",
-    packages=['escalateclient'],
+    packages=['escalateclient', 'escalateclient.core'],
     classifiers=[
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",
     ],
 )
-
