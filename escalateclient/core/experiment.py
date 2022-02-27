@@ -17,10 +17,8 @@ class ExperimentAPIMixin:
             content_type (str): Content type for request
         """
 
-        headers = {'Content-type': 'content_type_value'}
         exp_template_details = self.get(
-            endpoint=Endpoints.EXPERIMENT_TEMPLATE.value, data={"description": name}, 
-            headers=headers
+            endpoint=Endpoints.EXPERIMENT_TEMPLATE.value, data={"description": name}
         )
 
         if not details:

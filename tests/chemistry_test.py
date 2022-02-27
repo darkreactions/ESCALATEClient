@@ -2,15 +2,36 @@ import pytest
 from escalateclient.conftest import client
 
 
-def test_get_inventory(client):
+def test_get_exact(client):
     search={
-        "description": "1,4-Benzene diammonium iodide"
+        "uuid": "24d9e08b-0a4f-4683-b7e1-293cc5117438"
+    }
+    res = client.get_inventory_material(search)
+    for material in res:
+        if material["uuid"] != "24d9e08b-0a4f-4683-b7e1-293cc5117438":
+            assert False
+    assert True 
+
+
+def test_get_fields(client):
+    search={
+        "fields": "phase,description"
         }
     res = client.get_inventory_material(search)
     for material in res:
-        if material["description"] != "1,4-Benzene diammonium iodide":
+        if len(material) != 2 or "phase" not in material or "description" not in material:
             assert False
     assert True
+
+def test_get_omit_field(client):
+    search = {
+        "omit": "phase,description"
+    }
+    res = client.get_inventory_material(search)
+    for material in res:
+        if "phase" in material or "description" in material:
+            assert False
+    assert True 
 
 def test_get_iexact(client):
     search={
@@ -68,16 +89,6 @@ def test_get_icontains_case(client):
     res = client.get_inventory_material(search)
     for material in res:
         if "iodide" not in material["description"]:
-            assert False
-    assert True
-
-def test_get_fields(client):
-    search={
-        "fields": "phase,description"
-        }
-    res = client.get_inventory_material(search)
-    for material in res:
-        if len(material) != 2 or "phase" not in material or "description" not in material:
             assert False
     assert True
     
