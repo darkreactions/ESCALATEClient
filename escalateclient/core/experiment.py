@@ -17,8 +17,10 @@ class ExperimentAPIMixin:
             content_type (str): Content type for request
         """
 
+        headers = {'Content-type': 'content_type_value'}
         exp_template_details = self.get(
-            endpoint=Endpoints.EXPERIMENT_TEMPLATE.value, data={"description": name}
+            endpoint=Endpoints.EXPERIMENT_TEMPLATE.value, data={"description": name}, 
+            headers=headers
         )
 
         if not details:
@@ -46,7 +48,7 @@ class ExperimentAPIMixin:
         Args:
             uuid (str): UUID of experiment instance
         """
-        ...
+        return self.get(endpoint=Endpoints.EXPERIMENT_INSTANCE.value, data={'uuid': uuid})
 
     def get_outcomes(self, uuid: str):
         """Get outcomes related to experiment instance defined by uuid
@@ -54,6 +56,7 @@ class ExperimentAPIMixin:
         Args:
             uuid (str): UUID of experiment instance
         """
+        return self.get(endpoint=Endpoints.EXPERIMENT_INSTANCE.value, data={'uuid': uuid})
 
     def create_reagent_templates(self, data: dict[str, Any]):
         """Creates reagent templates based on data dict passed.
