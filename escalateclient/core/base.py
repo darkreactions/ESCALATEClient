@@ -92,13 +92,14 @@ class BaseClient:
         data = self._remove_urls_and_dictionaries(data)
         print(data)
         url = self._construct_url(endpoint, resource_id, related_endpoint)
+
         r = requests.get(
             url,
             params=data,
             headers={**self._token_header, "content-type": content_type},
         )
+
         if r.ok:
-            print(r.url)
             resp_json = r.json()
             if "count" in resp_json:
                 print(f'GET: OK. Found {resp_json["count"]} results')
@@ -106,7 +107,9 @@ class BaseClient:
                 print(f"GET: OK.")
 
             if parse_json:
-                return resp_json.get("results", resp_json)
+                results = resp_json.get("results", resp_json)
+                results.extend(self.get_next_page(resp_json["next"], content_type))
+                return results
             else:
                 return r
         else:
@@ -114,6 +117,30 @@ class BaseClient:
             print(f"Status {r.status_code}: {r.reason} {r.text}")
 
         return r
+
+    def get_next_page(self, next_page_url, content_type):
+        """Recursive function to get next page
+
+        Args:
+            next_page_url (str): url to next page
+            content_type (str): content type
+
+        Returns:
+            dict: Dictionary of results
+        """
+        if next_page_url is not None:
+            r = requests.get(
+                next_page_url,
+                headers={**self._token_header, "content-type": content_type},
+            )
+            if r.ok:
+                r_json = r.json()
+                current_page_results = r_json.get("results", [])
+                remaining_results = self.get_next_page(r_json["next"], content_type)
+                current_page_results.extend(remaining_results)
+            return current_page_results
+        else:
+            return {}
 
     def post(
         self,
