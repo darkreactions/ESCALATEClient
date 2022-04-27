@@ -1,9 +1,11 @@
 from __future__ import annotations
 from .constants import Endpoints
+from .protocols import BaseClientProtocol
+from typing import Dict
 
 
 class OrganizationAPIMixin:
-    def get_lab(self, search: dict = {}):
+    def get_lab(self: BaseClientProtocol, search: Dict[str, str] = {}):
         """Gets the lab/organization based on search terms, otherwise returns all labs
 
         Args:
@@ -19,14 +21,14 @@ class OrganizationAPIMixin:
             # if it starts with ! then the query is negated and the leading ! is stripped
             query_parameters_list = [
                 f"{q}={p}" if not p.startswith("!") else f"{q}!={p[1:]}"
-                for q,p in search.items()
+                for q, p in search.items()
             ]
             query_parameters = "&".join(query_parameters_list)
             endpoint = f"{endpoint}?{query_parameters}"
         labs = self.get(endpoint=endpoint)
         return labs
 
-    def select_lab(self, uuid: str):
+    def select_lab(self: BaseClientProtocol, uuid: str):
         """Selects the lab based on the uuid. Variable to be set is self._selected_lab
 
         Args:
@@ -36,7 +38,7 @@ class OrganizationAPIMixin:
         lab = self.get(endpoint=endpoint)
         # return true or false whether selecting lab was successful
         if "uuid" in lab:
-            self._selected_lab = lab
-            return True 
+            self._selected_lab = lab  # type: ignore
+            return True
         else:
             return False

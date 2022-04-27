@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import Any, overload, Literal, Dict
 import json
 import requests
 from urllib.parse import urlparse
@@ -34,14 +35,14 @@ class BaseClient:
         else:
             print(f"Error logging in: {r_login.text}")
 
-    def _remove_urls_and_dictionaries(self, data: dict):
+    def _remove_urls_and_dictionaries(self, data: Dict[str, str]) -> Dict[str, str]:
         """Removes any urls or nested dictionaries in the dictionary because it is being passed as url
         params. If url belongs to escalate replace with the UUID otherwise remove it altogether
 
         Args:
             data (dict): Dictionary of search data
         """
-        processed_data = {}
+        processed_data: Dict[str, str] = {}
         for k, v in data.items():
             if not v:
                 continue
@@ -61,7 +62,7 @@ class BaseClient:
                 else:
                     continue
 
-            except Exception as e:
+            except Exception:
                 if not isinstance(v, dict):
                     processed_data[k] = v
         return processed_data
@@ -76,15 +77,39 @@ class BaseClient:
                 url = f"{url}/{related_endpoint}"
         return url
 
+    @overload
+    def get(
+        self,
+        endpoint: str = ...,
+        data: Dict[str, str] = ...,
+        resource_id: str = ...,
+        related_endpoint: str = ...,
+        parse_json: Literal[True] = ...,
+        content_type: str = ...,
+    ) -> list[Any]:
+        ...
+
+    @overload
+    def get(
+        self,
+        endpoint: str = ...,
+        data: Dict[str, str] = ...,
+        resource_id: str = ...,
+        related_endpoint: str = ...,
+        parse_json: Literal[False] = ...,
+        content_type: str = ...,
+    ) -> requests.Response:
+        ...
+
     def get(
         self,
         endpoint: str = "",
-        data: dict = {},
+        data: Dict[str, str] = {},
         resource_id: str = "",
         related_endpoint: str = "",
         parse_json: bool = True,
         content_type: str = "application/json",
-    ) -> dict | requests.Response | None:
+    ) -> "list[Any] | requests.Response":
         """Make GET request with `data` to `endpoint` in ESCALATE API
 
         return: (dict|list|requests.Response), bool
@@ -107,7 +132,7 @@ class BaseClient:
                 print(f"GET: OK.")
 
             if parse_json:
-                results = resp_json.get("results", resp_json)
+                results: list[Any] = resp_json.get("results", resp_json)
                 results.extend(self.get_next_page(resp_json["next"], content_type))
                 return results
             else:
@@ -115,10 +140,9 @@ class BaseClient:
         else:
             print("GET: FAILED")
             print(f"Status {r.status_code}: {r.reason} {r.text}")
+            return r
 
-        return r
-
-    def get_next_page(self, next_page_url, content_type):
+    def get_next_page(self, next_page_url: str, content_type: str) -> "list[Any]":
         """Recursive function to get next page
 
         Args:
@@ -133,19 +157,21 @@ class BaseClient:
                 next_page_url,
                 headers={**self._token_header, "content-type": content_type},
             )
+            current_page_results = []
             if r.ok:
                 r_json = r.json()
-                current_page_results = r_json.get("results", [])
+                current_page_results: list[Any] = r_json.get("results", [])
                 remaining_results = self.get_next_page(r_json["next"], content_type)
                 current_page_results.extend(remaining_results)
             return current_page_results
+
         else:
-            return {}
+            return []
 
     def post(
         self,
         endpoint: str,
-        data: dict,
+        data: Dict[str, str],
         resource_id: str = "",
         related_endpoint: str = "",
         content_type: str = "application/json",
@@ -172,9 +198,7 @@ class BaseClient:
         print(f"Status {r.status_code}: {r.reason} {r.text}")
         return r
 
-    def _generate_url(
-        self, url: str = None, endpoint: str = None, resource_id: str = None
-    ):
+    def _generate_url(self, url: str, endpoint: str, resource_id: str):
         if not url:
             if not (endpoint and resource_id):
                 raise ValueError("Must specify either url or endpoint and resource_id")
@@ -184,10 +208,10 @@ class BaseClient:
 
     def put(
         self,
-        url: str = None,
-        endpoint: str = None,
-        resource_id: str = None,
-        data: dict = None,
+        url: str,
+        endpoint: str,
+        resource_id: str,
+        data: Dict[str, str],
     ):
         """Update a resource
         Either provide a url or an endpoint and resource id
@@ -201,10 +225,9 @@ class BaseClient:
 
     def patch(
         self,
-        url: str = None,
-        endpoint: str = None,
-        resource_id: str = None,
-        data: dict = None,
+        endpoint: str,
+        resource_id: str,
+        data: Dict[str, str],
     ):
         url = self._construct_url(endpoint=endpoint, resource_id=resource_id)
         r = requests.api.patch(url + "/", json=data, headers=self._token_header)
@@ -213,7 +236,7 @@ class BaseClient:
             print(f"{r.text}")
         return r.json()
 
-    def delete(self, url: str = None, endpoint: str = None, resource_id: str = None):
+    def delete(self, url: str, endpoint: str, resource_id: str):
         """Delete a resource
         Either provide a url or an endpoint and resource id
         """
@@ -226,16 +249,17 @@ class BaseClient:
 
     def get_or_create(
         self,
-        endpoint: str = None,
+        endpoint: str,
         resource_id: str = "",
         related_endpoint: str = "",
-        data: dict = {},
-    ):
+        data: Dict[str, str] = {},
+    ) -> "list[Any]":
         """Get resource matching data, else create a new one"""
-        r = self.get(
+        r: "list[Any]" = self.get(
             endpoint=endpoint,
             resource_id=resource_id,
             related_endpoint=related_endpoint,
+            parse_json=True,
             data=data,
         )
         if not len(r) > 0:
